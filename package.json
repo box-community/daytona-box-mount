@@ -1,0 +1,39 @@
+{
+  "name": "daytona-box-mount-contract-review",
+  "version": "1.0.0",
+  "description": "Box Mount contract review demo for Daytona and Box",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "secrets:sync": "tsx scripts/sync-box-secret.ts",
+    "doctor": "tsx src/doctor.ts",
+    "seed": "tsx src/seed.ts",
+    "demo": "tsx src/demo.ts",
+    "status": "tsx src/status.ts",
+    "teardown": "tsx src/teardown.ts",
+    "generate:fixtures": "tsx scripts/generate-fixtures.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "npm run typecheck && tsx --test tests/*.test.ts && python3 -B -m unittest discover -s tests -p '*_test.py'"
+  },
+  "keywords": [
+    "box",
+    "daytona",
+    "ai-agents"
+  ],
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@openai/agents": "^0.18.0",
+    "box-node-sdk": "^10.14.0",
+    "dotenv": "^17.4.2",
+    "@daytona/sdk": "^0.214.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.2.0",
+    "docx": "^9.7.1",
+    "tsx": "^4.23.12",
+    "typescript": "^7.0.2"
+  }
+}

@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" role="img" aria-labelledby="title description">
+  <title id="title">Agent-driven contract review with Daytona and Box Mount</title>
+  <desc id="description">A provider-neutral view of the application. The host runs an agent with a goal, instructions, and a model-driven tool loop. Model hosting is abstracted: a local or hosted model can fill this architectural role; this diagram does not add a local-model implementation. The agent sends shell commands through the Daytona SDK and receives results. Tools read the contract and playbook in the mounted workspace. The agent returns a memo to the application, which saves it in Reviewed. Box Mount synchronizes with Box through Daytona's outbound proxy. The sandbox contains only a Box access-token placeholder. Outside the sandbox, Daytona Secrets substitutes the real token into HTTPS headers for api.box.com and upload.box.com. Host setup registers or rotates the secret. The host separately uses its Box token to optionally assign a review task. Secrets protects token confidentiality, not the scope of authenticated Box actions.</desc>
+  <defs>
+    <marker id="arrow-gray" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto-start-reverse" markerUnits="userSpaceOnUse">
+      <path d="M 1 1 L 10 6 L 1 11" fill="none" stroke="#52657C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <marker id="arrow-blue" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto-start-reverse" markerUnits="userSpaceOnUse">
+      <path d="M 1 1 L 10 6 L 1 11" fill="none" stroke="#0061D5" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <style>
+      text { font-family: Arial, Helvetica, sans-serif; fill: #162B46; }
+      .muted { fill: #52657C; }
+      .blue { fill: #0061D5; }
+      .white { fill: #FFFFFF; }
+      .mono { font-family: Menlo, Consolas, monospace; }
+      .center { text-anchor: middle; }
+      .connection { fill: none; stroke: #52657C; stroke-width: 2.5; stroke-linejoin: round; }
+      .api { fill: none; stroke: #0061D5; stroke-width: 3; stroke-linejoin: round; }
+    </style>
+  </defs>
+  <rect width="1920" height="1080" fill="#FFFFFF"/>
+  <text x="80" y="100" font-size="56" font-weight="700">Contract review with Daytona &amp; Box Mount</text>
+  <text x="80" y="151" font-size="29" class="muted">Agent-driven work. Sandboxed tools. Box-backed documents.</text>
+
+  <!-- Provisioning is host-controlled, not an agent tool. -->
+  <path d="M 290 283 V 228 H 1665 V 285" class="connection" stroke-dasharray="8 7" marker-end="url(#arrow-gray)"/>
+  <rect x="592" y="208" width="738" height="39" fill="#FFFFFF"/>
+  <text x="961" y="235" font-size="23" class="center muted">Host setup: register / rotate token · npm run secrets:sync</text>
+
+  <!-- Provider-neutral agent and orchestration on the host. -->
+  <rect x="80" y="290" width="420" height="540" rx="22" fill="#F5F8FC" stroke="#CFD9E6" stroke-width="2"/>
+  <text x="108" y="326" font-size="23" font-weight="700" class="muted" letter-spacing="1">AGENT APPLICATION / HOST</text>
+  <rect x="120" y="355" width="340" height="175" rx="14" fill="#FFFFFF" stroke="#B9C8DA" stroke-width="2"/>
+  <text x="290" y="402" font-size="33" font-weight="700" class="center">Agent runtime</text>
+  <text x="290" y="446" font-size="23" class="center muted">Goal + instructions + tools</text>
+  <text x="290" y="488" font-size="23" class="center muted">Model-driven decision loop</text>
+  <text x="290" y="514" font-size="19" class="center blue">Local or hosted model</text>
+
+  <line x1="290" y1="540" x2="290" y2="613" class="connection" marker-end="url(#arrow-gray)"/>
+  <text x="313" y="583" font-size="22" class="muted">Final memo</text>
+  <rect x="120" y="625" width="340" height="145" rx="14" fill="#FFFFFF" stroke="#B9C8DA" stroke-width="2"/>
+  <text x="290" y="669" font-size="29" font-weight="700" class="center">Application workflow</text>
+  <text x="290" y="710" font-size="21" class="center muted">Provision · mount · save memo</text>
+  <text x="290" y="745" font-size="21" class="center muted">Assign task · manage lifecycle</text>
+  <text x="290" y="805" font-size="20" class="center muted">Host credentials stay outside the sandbox</text>
+
+  <!-- Tools, workspace, and daemon run in Daytona. -->
+  <rect x="700" y="290" width="600" height="540" rx="22" fill="#F5F8FC" stroke="#CFD9E6" stroke-width="2"/>
+  <text x="730" y="326" font-size="23" font-weight="700" class="muted" letter-spacing="1">DAYTONA / LINUX SANDBOX</text>
+  <text x="600" y="393" font-size="22" class="center muted">Tool calls</text>
+  <line x1="472" y1="414" x2="727" y2="414" class="connection" marker-end="url(#arrow-gray)"/>
+  <line x1="727" y1="465" x2="472" y2="465" class="connection" marker-end="url(#arrow-gray)"/>
+  <text x="600" y="498" font-size="22" class="center muted">Tool results</text>
+  <text x="600" y="529" font-size="19" class="center mono muted">Daytona SDK</text>
+
+  <rect x="740" y="355" width="210" height="175" rx="14" fill="#FFFFFF" stroke="#B9C8DA" stroke-width="2"/>
+  <text x="845" y="402" font-size="30" font-weight="700" class="center">Shell tools</text>
+  <text x="845" y="448" font-size="21" class="center mono">exec_command</text>
+  <text x="845" y="491" font-size="23" class="center muted">Bash / Python</text>
+  <line x1="962" y1="445" x2="997" y2="445" class="connection" marker-start="url(#arrow-gray)" marker-end="url(#arrow-gray)"/>
+  <text x="980" y="422" font-size="18" class="center muted">Read</text>
+
+  <rect x="1010" y="355" width="250" height="240" rx="14" fill="#FFFFFF" stroke="#B9C8DA" stroke-width="2"/>
+  <text x="1135" y="395" font-size="27" font-weight="700" class="center">Box workspace</text>
+  <text x="1135" y="432" font-size="17" class="center mono blue">/home/daytona/box-demo</text>
+  <text x="1135" y="476" font-size="21" class="center mono muted">Incoming/</text>
+  <text x="1135" y="510" font-size="21" class="center mono muted">Playbook/</text>
+  <text x="1135" y="551" font-size="21" class="center mono blue">Reviewed/</text>
+  <text x="1135" y="579" font-size="19" class="center muted">Contract review memo</text>
+
+  <!-- Application writes the memo through Daytona, separate from agent tools. -->
+  <path d="M 472 690 H 600 V 568 H 996" class="connection" marker-end="url(#arrow-gray)"/>
+  <text x="810" y="555" font-size="21" class="center muted">App writes memo</text>
+  <line x1="1135" y1="606" x2="1135" y2="641" class="connection" marker-start="url(#arrow-gray)" marker-end="url(#arrow-gray)"/>
+  <text x="1156" y="631" font-size="21" class="muted">Sync</text>
+  <rect x="1010" y="655" width="250" height="115" rx="14" fill="#0061D5"/>
+  <text x="1135" y="702" font-size="34" font-weight="700" class="center white">Box Mount</text>
+  <text x="1135" y="742" font-size="21" class="center white">Background sync daemon</text>
+  <text x="741" y="683" font-size="20" class="mono muted">BOX_ACCESS_TOKEN</text>
+  <text x="741" y="716" font-size="21" class="blue">Opaque placeholder</text>
+  <text x="741" y="749" font-size="20" class="muted">No plaintext Box token</text>
+  <text x="1000" y="805" font-size="20" class="center muted">Tools and Box Mount share this environment</text>
+
+  <!-- Credential substitution occurs outside the sandbox. -->
+  <rect x="1490" y="300" width="350" height="205" rx="14" fill="#EEF5FF" stroke="#0061D5" stroke-width="2"/>
+  <text x="1665" y="344" font-size="33" font-weight="700" class="center blue">Daytona Secrets</text>
+  <text x="1665" y="384" font-size="22" class="center">Outbound proxy substitutes token</text>
+  <text x="1665" y="416" font-size="21" class="center muted">Outside the sandbox</text>
+  <text x="1665" y="454" font-size="19" class="center mono muted">api.box.com</text>
+  <text x="1665" y="484" font-size="19" class="center mono muted">upload.box.com</text>
+  <path d="M 1273 713 H 1390 V 403 H 1477" class="api" marker-start="url(#arrow-blue)" marker-end="url(#arrow-blue)"/>
+  <rect x="1310" y="546" width="160" height="67" fill="#FFFFFF"/>
+  <text x="1390" y="570" font-size="22" class="center blue">HTTPS +</text>
+  <text x="1390" y="601" font-size="22" class="center blue">placeholder</text>
+
+  <line x1="1665" y1="519" x2="1665" y2="631" class="api" marker-start="url(#arrow-blue)" marker-end="url(#arrow-blue)"/>
+  <text x="1688" y="565" font-size="22" class="blue">Box API</text>
+  <text x="1688" y="599" font-size="22" class="blue">+ real token</text>
+  <rect x="1490" y="645" width="350" height="185" rx="14" fill="#EEF5FF" stroke="#0061D5" stroke-width="2"/>
+  <text x="1665" y="696" font-size="44" font-weight="700" class="center blue">Box</text>
+  <text x="1665" y="738" font-size="26" class="center">Enterprise folder</text>
+  <text x="1665" y="775" font-size="22" class="center muted">Documents · memo · review task</text>
+  <text x="1665" y="809" font-size="21" class="center muted">Human review in Box</text>
+
+  <!-- Review-task assignment is a host API call, separate from mount sync. -->
+  <path d="M 290 842 V 906 H 1665 V 843" class="api" stroke-dasharray="9 7" marker-end="url(#arrow-blue)"/>
+  <rect x="516" y="885" width="972" height="40" fill="#FFFFFF"/>
+  <text x="1002" y="912" font-size="24" class="center blue">Optional: app assigns a Box review task using its host-side token</text>
+  <text x="80" y="986" font-size="23" font-weight="700">The agent decides how to review. The application controls publishing and lifecycle.</text>
+  <text x="80" y="1026" font-size="22" class="muted">Secrets hides the token; the placeholder still permits Box API actions within that token's permissions.</text>
+</svg>
