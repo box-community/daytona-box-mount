@@ -1,10 +1,9 @@
 import { readFile } from "node:fs/promises";
 import { relative, sep } from "node:path";
 import { Daytona, DaytonaNotFoundError, type Sandbox } from "@daytona/sdk";
-import type { DemoConfig } from "./config.js";
+import { resolveBoxMountArchive, type DemoConfig } from "./config.js";
 import { BOX_SECRET_NAME } from "./box-secret.js";
 
-export const SANDBOX_TIMEOUT_MS = 60 * 60 * 1000;
 export const REMOTE_BIN_DIR = "/usr/local/bin";
 export const REMOTE_BINARY = `${REMOTE_BIN_DIR}/box-mount`;
 export const REMOTE_DATA_PATH = "/home/daytona/.box-mount";
@@ -35,7 +34,7 @@ export function shellQuote(value: string): string {
 
 export async function createDemoSandbox(
   config: DemoConfig,
-  timeoutMs = SANDBOX_TIMEOUT_MS,
+  timeoutMs = 0,
 ): Promise<Sandbox> {
   return getDaytona(config.daytonaApiKey).create({
     language: "typescript",
@@ -45,8 +44,7 @@ export async function createDemoSandbox(
     // outside the sandbox for HTTPS requests to the secret's allowed hosts.
     secrets: { BOX_ACCESS_TOKEN: BOX_SECRET_NAME },
     public: false,
-    // A wall-clock TTL preserves the demo's one-hour lifetime. Idle timers
-    // alone would either interrupt Box Mount or be extended by SDK activity.
+    // Reviews persist until explicit teardown. Doctor/seed pass a finite TTL.
     domainAllowList: [
       '*.boxcdn.net',
       '*.box.com',
@@ -56,7 +54,7 @@ export async function createDemoSandbox(
     ].join(','),
     ttlMinutes: Math.ceil(timeoutMs / 60_000),
     autoStopInterval: 0,
-    autoDeleteInterval: 0,
+    autoDeleteInterval: timeoutMs === 0 ? -1 : 0,
     labels: {
       app: "daytona-box-mount-contract-review",
       box_folder_id: config.boxFolderId,
@@ -120,17 +118,20 @@ export async function writeSandboxFile(
 
 export async function installBoxMount(
   sandbox: Sandbox,
-  archivePath: string,
+  archivePath = resolveBoxMountArchive(),
 ): Promise<string> {
+  console.log("Uploading Box Mount archive...");
   await writeSandboxFile(
     sandbox, "/tmp/box-mount.tar.gz", await readFile(archivePath), 180_000,
   );
+  console.log("Uploading Box Mount installer...");
   await writeSandboxFile(
     sandbox,
     "/tmp/install-box-mount.py",
     await readFile(new URL("../scripts/install-box-mount.py", import.meta.url)),
   );
 
+  console.log("Installing and checking Box Mount...");
   const result = await runCommand(sandbox, [
     "sudo -n python3 /tmp/install-box-mount.py /tmp/box-mount.tar.gz " +
       shellQuote(REMOTE_BIN_DIR),
@@ -165,6 +166,18 @@ export async function boxMountStatus(sandbox: Sandbox): Promise<string> {
     "status",
   ].join(" "));
   return result.stdout.trim();
+}
+
+// Box Mount 0.6.0 has human-readable status only (no JSON flag). Fail closed
+// if its format changes; a successful command alone does not mean a live mount.
+export function classifyBoxMountStatus(
+  output: string, boxFolderId: string,
+): "running" | "absent" | "unhealthy" | "unknown" {
+  const status = output.trim();
+  if (status === "No mount found.") return "absent";
+  const match = status.match(/^([^\r\n|]+) \| box_folder_id=(\d+) \| pid=(\d+) \| status=([a-z]+)$/);
+  if (!match || match[1] !== REMOTE_MOUNT_PATH || match[2] !== boxFolderId) return "unknown";
+  return match[4] === "running" && Number(match[3]) > 0 ? "running" : "unhealthy";
 }
 
 export function remoteFixturePath(fixtureRoot: string, localPath: string): string {

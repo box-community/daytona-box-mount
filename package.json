@@ -8,10 +8,12 @@
     "node": ">=22"
   },
   "scripts": {
-    "secrets:sync": "tsx scripts/sync-box-secret.ts",
+    "secrets": "tsx scripts/sync-box-secret.ts",
     "doctor": "tsx src/doctor.ts",
     "seed": "tsx src/seed.ts",
     "demo": "tsx src/demo.ts",
+    "setup": "tsx src/sandbox-setup.ts",
+    "stop": "tsx src/sandbox-stop.ts",
     "status": "tsx src/status.ts",
     "teardown": "tsx src/teardown.ts",
     "generate:fixtures": "tsx scripts/generate-fixtures.ts",

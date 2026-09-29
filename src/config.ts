@@ -35,7 +35,7 @@ export type DemoConfig = {
   boxReviewerUserId: string;
   openaiApiKey: string;
   openaiModel: string;
-  boxMountArchive: string;
+  boxMountArchive?: string;
 };
 
 function required(name: string): string {
@@ -56,7 +56,7 @@ export function requireBoxAccessToken(): string {
   return required("BOX_ACCESS_TOKEN");
 }
 
-function resolveBoxMountArchive(): string {
+export function resolveBoxMountArchive(): string {
   const configuredArchive = process.env.BOX_MOUNT_ARCHIVE?.trim();
   if (configuredArchive) {
     const path = isAbsolute(configuredArchive)
@@ -104,7 +104,7 @@ function resolveBoxMountArchive(): string {
   );
 }
 
-export function getDemoConfig(): DemoConfig {
+export function getDemoConfig(options: { resolveArchive?: boolean } = {}): DemoConfig {
   return {
     daytonaApiKey: requireDaytonaApiKey(),
     daytonaSnapshot: process.env.DAYTONA_SNAPSHOT?.trim() || undefined,
@@ -114,6 +114,6 @@ export function getDemoConfig(): DemoConfig {
       process.env.BOX_REVIEWER_USER_ID?.trim() || "",
     openaiApiKey: required("OPENAI_API_KEY"),
     openaiModel: process.env.OPENAI_MODEL?.trim() || "gpt-5.5",
-    boxMountArchive: resolveBoxMountArchive(),
+    boxMountArchive: options.resolveArchive === false ? undefined : resolveBoxMountArchive(),
   };
 }

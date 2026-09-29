@@ -62,7 +62,7 @@ main().catch((error: unknown) => {
   if (message.includes("401") || message.toLowerCase().includes("auth")) {
     console.error(
       "\nSeed failed. Your Box Developer Token may have expired.\n" +
-        "Check authentication and secret configuration. If the token expired, update BOX_ACCESS_TOKEN, run npm run secrets:sync, and retry.",
+        "Check authentication and secret configuration. If the token expired, update BOX_ACCESS_TOKEN, run npm run secrets, and retry.",
     );
   } else {
     console.error(`\nSeed failed:\n${message}`);

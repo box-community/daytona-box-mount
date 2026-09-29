@@ -6,7 +6,7 @@ import {
   disposeDaytona,
   unmountBox,
 } from "./sandbox.js";
-import { readState, removeState } from "./state.js";
+import { readState, removeState, withDemoLock } from "./state.js";
 
 async function main(): Promise<void> {
   const state = await readState();
@@ -32,10 +32,10 @@ async function main(): Promise<void> {
   }
 
   try {
-    if (sandbox.state === "started") {
+    if (sandbox.state === "started" && state.mountState !== "unmounted") {
       console.log("Running Box Mount's final sync and unmount...");
       await unmountBox(sandbox);
-    } else {
+    } else if (sandbox.state !== "started") {
       console.warn(`Sandbox is ${sandbox.state}; final sync is unavailable.`);
     }
   } catch (error) {
@@ -52,7 +52,7 @@ async function main(): Promise<void> {
   console.log("Demo sandbox destroyed and local state cleared.");
 }
 
-main().catch((error: unknown) => {
+withDemoLock(main).catch((error: unknown) => {
   console.error(`\nTeardown failed:\n${(error as Error).message}`);
   process.exitCode = 1;
 }).finally(disposeDaytona);

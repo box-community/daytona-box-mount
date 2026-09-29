@@ -58,14 +58,16 @@ When that directory contains exactly one archive, its name does not matter.
 For multiple archives or another location, set `BOX_MOUNT_ARCHIVE` in `.env`
 to the one you want to use.
 
-The application uploads the archive to each new sandbox, installs the executable,
-and runs `box-mount --version`. Supply the Linux x86_64 build even when your
-host uses another operating system or CPU architecture.
+Reusable setup uploads the archive only when the sandbox lacks Box Mount,
+then records its version. Later reviews check that version and skip the upload;
+they do not require the local archive. Doctor and seed still install into their
+own temporary sandboxes. Supply the Linux x86_64 build even when your host uses
+another operating system or CPU architecture.
 
 ### 3. Register the Box secret
 
 ```bash
-npm run secrets:sync
+npm run secrets
 ```
 
 This host-side command reads `BOX_ACCESS_TOKEN` from `.env` and creates or
@@ -95,9 +97,9 @@ Box actions available through its placeholder.
 
 ## Run
 
-Use the following commands from the project directory on your host. A successful
-demo leaves a sandbox registered in `.demo-state.json`; clean it up before
-starting another review session.
+Use the following commands from the project directory on your host. The review
+sandbox is saved in `.demo-state.json` and reused across requests. Do not delete
+that file to start another review. Doctor and seed remain temporary operations.
 
 ### 1. Check the configuration
 
@@ -136,14 +138,35 @@ Reviewed/
 The application writes ordinary files; Box Mount uploads them. While mounted,
 changes made in Box also flow back into the sandbox workspace.
 
-### 3. Start the contract review
+### 3. Prepare the reusable sandbox
+
+```bash
+npm run setup
+```
+
+This creates the sandbox, installs Box Mount, and mounts the Box folder without
+running the agent. It saves the sandbox ID before installation, so an upload
+failure can be inspected and retried without automatically creating another
+sandbox. Installation logs distinguish archive upload, installer upload, and
+execution. The initial archive transfer still needs to succeed once.
+
+Running setup again reconnects to the saved sandbox. A stopped or archived
+sandbox is started; an installed binary is reused. Box Mount status is checked:
+a running mount with the expected path and Box folder is reused without unmounting
+or repeating bootstrap. If no mount exists, one is created. An unhealthy,
+unrecognized, or failed status check stops setup and retains the sandbox for inspection.
+
+### 4. Start or repeat the contract review
 
 ```bash
 npm run demo
 ```
 
-The application creates a new sandbox and mounts the folder at
-`/home/daytona/box-demo`. The agent is given the review goal and source paths,
+The application reuses the saved sandbox and checks the Box mount at
+`/home/daytona/box-demo`. If setup has not been run, it performs setup first.
+Box Mount continuously synchronizes the running mount; this check confirms a
+running daemon, not that every remote change has already arrived locally.
+The agent is given the review goal and source paths,
 not pre-extracted document contents. It selects shell commands to inspect the
 files, extracts DOCX text using Python, and compares the agreement against the
 playbook. Command results feed back into the loop so it can adjust its next
@@ -159,7 +182,13 @@ Box to check the result. If you configured a reviewer, the application also
 attempts to create and assign a Box review task; that action is not an agent
 tool call.
 
-### 4. Inspect the running sandbox
+Run `npm run demo` again for another review using the same sandbox and installed
+binary. Each run starts a fresh agent conversation, reviews the same configured
+contract, and replaces the same memo; a configured reviewer can receive another
+task. This is workspace reuse, not persistent conversation memory or a
+multi-contract request API.
+
+### 5. Inspect the running sandbox
 
 ```bash
 npm run status
@@ -173,7 +202,20 @@ For interactive exploration, select the printed sandbox ID in the
 terminal or filesystem tools. Inspect `/home/daytona/box-demo`, or edit a
 synthetic document there and observe the synchronized change in Box.
 
-### 5. Finish the session
+### 6. Stop between sessions, or delete when finished
+
+To retain the installed environment without leaving it running:
+
+```bash
+npm run stop
+```
+
+This completes a final sync and unmount, then stops the sandbox while retaining
+its filesystem and saved ID. If final sync fails, it does not stop or delete the
+sandbox. There is no Box synchronization while stopped. `npm run demo` or
+`npm run setup` starts it again and remounts the folder.
+
+To permanently remove the sandbox instead:
 
 ```bash
 npm run teardown
@@ -184,9 +226,9 @@ local session record. Files already synchronized to Box remain there. If
 unmounting fails, teardown warns and still proceeds with deletion; unsynchronized
 changes may be lost. If deletion fails, it retains the session record for retry.
 
-The demo has a one-hour wall-clock lifetime. Run teardown before that deadline:
-automatic destruction is not a final-sync guarantee, and the Box token can
-expire earlier.
+The reusable sandbox has no automatic expiry or idle stop. Running resources
+continue to incur charges until you stop or delete it; retained storage remains
+subject to Daytona's policies. The Box token still expires independently.
 
 The fixtures and generated memo are for demonstration only. A qualified legal
 professional must review any findings before they are used.
@@ -220,7 +262,7 @@ See [Daytona's permissions guidance](https://www.daytona.io/docs/en/secrets/#per
 After replacing a Box Developer Token in `.env`, run:
 
 ```bash
-npm run secrets:sync
+npm run secrets
 npm run doctor
 ```
 
@@ -234,7 +276,7 @@ registered secret, permitted hosts, network access, and certificate handling.
 The doctor's `users/me` check confirms proxy authentication, not Box Mount's
 complete download/upload path. If an additional endpoint needs credential
 substitution, verify it before changing the hosts in `src/box-secret.ts` and
-rerunning `secrets:sync`. Do not disable TLS verification.
+rerunning `secrets`. Do not disable TLS verification.
 
 A sandbox created before the Secrets migration can retain its old plaintext
 environment. Finish synchronization and tear it down before creating a fresh
@@ -246,6 +288,8 @@ one; reconnecting does not sanitize an existing sandbox.
   tool-event logging, and final memo publication.
 - `src/agent-sandbox.ts` connects the agent's shell capability to the existing
   Daytona sandbox.
+- `src/reusable-sandbox.ts` handles setup, reconnect, installation checks,
+  mount health checks/reuse, and safe stop; `src/state.ts` records progress and locks commands.
 - `src/run-review-job.ts` checks input/output files and coordinates optional
   task assignment through `src/box.ts`.
 
@@ -282,14 +326,33 @@ See [Daytona's Box Mount guide](https://www.daytona.io/docs/en/mount-external-st
 
 ### Sandbox lifetime and cleanup
 
-Idle auto-stop is disabled while Box Mount runs. The main demo uses a
-60-minute hard TTL; doctor and seed sandboxes use five and fifteen minutes,
-respectively, and are explicitly deleted when their commands finish.
+The review sandbox uses `ttlMinutes: 0`, `autoStopInterval: 0`, and
+`autoDeleteInterval: -1`. In Daytona, an auto-delete value of zero means delete
+on stop, not disable deletion. Doctor and seed retain their five- and
+fifteen-minute hard TTLs and explicit cleanup.
 
-If the sandbox has expired, use `npm run teardown` to clear its saved state.
-For a failed review, the application attempts cleanup automatically and retains
-state if sandbox deletion fails. Neither cancellation nor automatic expiry
-guarantees that pending writes reached Box.
+Failed setup or review commands retain the sandbox and its saved progress.
+Retry setup after fixing installation or authentication. A failed mount is
+recorded as uncertain: the next attempt checks live status, reuses a running
+mount, or mounts if Box Mount explicitly reports no mount. Unhealthy or unknown
+status never triggers an automatic unmount/reset. Run `npm run status` and inspect
+`/home/daytona/.box-mount/logs` in Daytona before recovery; preserve any unsynced
+documents. An externally stopped daemon may need manual recovery. `npm run stop`
+still performs a graceful final sync and unmount before stopping the sandbox.
+
+If the saved sandbox was deleted, `npm run teardown` clears its stale record;
+then run setup again. Saved sessions from the old one-hour lifecycle require
+explicit teardown and recreation, rather than silently retaining old credentials.
+Changing `BOX_FOLDER_ID` while a session exists is rejected to avoid using the
+wrong workspace. Changing a snapshot setting does not rebuild an existing sandbox.
+
+Setup, review, stop, and teardown share a checkout-local `.demo-state.json.lock`
+to prevent overlapping commands. An interrupted process can leave this lock.
+Before manually removing it, verify the recorded PID is no longer running and
+any remote command/upload has finished. Do not run concurrent requests from
+another checkout or host against the same sandbox; this lock is not distributed.
+Neither interruption nor stopping a sandbox directly in the dashboard guarantees
+pending writes reached Box. Prefer `npm run stop` for a graceful stop.
 
 ### Offline verification
 

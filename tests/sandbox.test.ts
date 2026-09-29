@@ -54,15 +54,15 @@ function fakeSandbox(exitCode = 0, result = "ok\n") {
   return { sandbox, executeCommand, uploadFile };
 }
 
-test("creation sets a hard TTL and passes a secret reference, never plaintext credentials", async () => {
+test("review sandbox persists without TTL or delete-on-stop and uses only a secret reference", async () => {
   await withoutEvents(async () => {
     const sandbox = fakeSandbox().sandbox;
     const create = mock.method(Daytona.prototype, "create", async () => sandbox);
     assert.equal(await createDemoSandbox(config), sandbox);
     const [params, options] = create.mock.calls[0]!.arguments;
-    assert.equal(params?.ttlMinutes, 60);
+    assert.equal(params?.ttlMinutes, 0);
     assert.equal(params?.autoStopInterval, 0);
-    assert.equal(params?.autoDeleteInterval, 0);
+    assert.equal(params?.autoDeleteInterval, -1);
     assert.equal(params?.user, "daytona");
     assert.equal(params?.public, false);
     assert.equal(params?.envVars, undefined);
@@ -82,6 +82,7 @@ test("custom snapshots and TTLs reach Daytona but OpenAI credentials stay on the
     const params = create.mock.calls[0]!.arguments[0];
     assert.equal((params as { snapshot?: string })?.snapshot, "custom");
     assert.equal(params?.ttlMinutes, 5);
+    assert.equal(params?.autoDeleteInterval, 0);
     assert.equal(params?.envVars, undefined);
     assert.deepEqual(params?.secrets, { BOX_ACCESS_TOKEN: "box-mount-token" });
     assert.equal(params?.labels?.reviewer, "openai");

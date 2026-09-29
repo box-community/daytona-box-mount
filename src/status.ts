@@ -17,7 +17,7 @@ async function main(): Promise<void> {
 
   console.log(`Sandbox: ${state.sandboxId}`);
   console.log(`Box folder: ${state.boxFolderId}`);
-  console.log(`Expected expiry: ${new Date(state.expiresAt).toLocaleString()}`);
+  console.log(`Expected expiry: ${state.expiresAt ? new Date(state.expiresAt).toLocaleString() : "none (explicit teardown required)"}`);
 
   try {
     const sandbox = await connectSandbox(
@@ -25,7 +25,8 @@ async function main(): Promise<void> {
       requireDaytonaApiKey(),
     );
     if (sandbox.state !== "started") {
-      throw new Error(`Sandbox is ${sandbox.state}. It has not been restarted.`);
+      console.log(`Sandbox is ${sandbox.state}. Run npm run demo or npm run setup to start it; status did not restart it.`);
+      return;
     }
     console.log(`\n${await boxMountStatus(sandbox)}`);
 
@@ -41,8 +42,8 @@ async function main(): Promise<void> {
   } catch (error) {
     throw new Error(
       `The saved sandbox is no longer reachable.\n` +
-        `It may have reached this demo's one-hour TTL or been stopped.\n` +
-        `Run npm run teardown to clear local state.\n\n` +
+        `Check Daytona connectivity and the sandbox in the dashboard.\n` +
+        `If it was deleted, run npm run teardown to clear local state.\n\n` +
         `${(error as Error).message}`,
     );
   }

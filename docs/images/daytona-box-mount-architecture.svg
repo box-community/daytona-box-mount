@@ -26,7 +26,7 @@
   <!-- Provisioning is host-controlled, not an agent tool. -->
   <path d="M 290 283 V 228 H 1665 V 285" class="connection" stroke-dasharray="8 7" marker-end="url(#arrow-gray)"/>
   <rect x="592" y="208" width="738" height="39" fill="#FFFFFF"/>
-  <text x="961" y="235" font-size="23" class="center muted">Host setup: register / rotate token · npm run secrets:sync</text>
+  <text x="961" y="235" font-size="23" class="center muted">Host setup: register / rotate token · npm run secrets</text>
 
   <!-- Provider-neutral agent and orchestration on the host. -->
   <rect x="80" y="290" width="420" height="540" rx="22" fill="#F5F8FC" stroke="#CFD9E6" stroke-width="2"/>

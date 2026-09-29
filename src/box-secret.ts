@@ -42,6 +42,6 @@ export async function validateSandboxBoxSecret(
     undefined, undefined, 40,
   );
   if (auth.exitCode !== 0 || auth.result.trim() !== "200") {
-    throw new Error("Sandbox Box authentication through Daytona Secrets failed. Check token expiry, secret hosts, network/TLS settings, and curl availability; update .env and run npm run secrets:sync after rotating the token.");
+    throw new Error("Sandbox Box authentication through Daytona Secrets failed. Check token expiry, secret hosts, network/TLS settings, and curl availability; update .env and run npm run secrets after rotating the token.");
   }
 }

@@ -1,6 +1,8 @@
 node_modules/
 .env
 .demo-state.json
+.demo-state.json.lock
+.demo-state.json.*.tmp
 
 private/*
 !private/.gitkeep
